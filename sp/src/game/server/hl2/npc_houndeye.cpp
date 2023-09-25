@@ -8,6 +8,7 @@
 #include "cbase.h"
 #include "particle_parse.h"
 #include "npc_houndeye.h"
+#include "npc_houndeyealpha.h"
 #include "ai_default.h"
 #include "ai_node.h"
 #include "ai_route.h"
@@ -645,7 +646,10 @@ void CNPC_Houndeye::NPCThink(void)
 //------------------------------------------------------------------------------
 int CNPC_Houndeye::OnTakeDamage_Alive(const CTakeDamageInfo &info)
 {
-	if (m_pSquad && random->RandomInt(0, 10) == 10)
+	AISquadIter_t iter;
+	CAI_BaseNPC *pSquadMember = m_pSquad->GetFirstMember(&iter);
+
+	if (m_pSquad && random->RandomInt(0, 10) == 10 && (!FClassnameIs(pSquadMember, "npc_houndeyealpha") && !pSquadMember->IsCurSchedule(SCHED_HOUND_RANGE_ATTACK1)))
 	{
 		EmitSound("NPC_Houndeye.Retreat");
 		m_flSoundWaitTime = gpGlobals->curtime + 1.0;
@@ -663,12 +667,18 @@ int CNPC_Houndeye::OnTakeDamage_Alive(const CTakeDamageInfo &info)
 //------------------------------------------------------------------------------
 void CNPC_Houndeye::Event_Killed(const CTakeDamageInfo &info)
 {
+	AISquadIter_t iter;
 	EmitSound("NPC_Houndeye.Retreat");
 	m_flSoundWaitTime = gpGlobals->curtime + 1.0;
+	CAI_BaseNPC *pSquadMember = m_pSquad->GetFirstMember(&iter);
+	
 
-	if (m_pSquad)
+	if (!FClassnameIs(pSquadMember, "npc_houndeyealpha") && !pSquadMember->IsCurSchedule(SCHED_HOUND_RANGE_ATTACK1))
 	{
-		m_pSquad->BroadcastInteraction(g_interactionHoundeyeGroupRetreat, NULL, this);
+		if (m_pSquad)
+		{
+			m_pSquad->BroadcastInteraction(g_interactionHoundeyeGroupRetreat, NULL, this);
+		}
 	}
 
 	BaseClass::Event_Killed(info);
